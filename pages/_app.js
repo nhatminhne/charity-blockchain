@@ -17,12 +17,12 @@ function MyApp({ Component, pageProps }) {
     <>
       {" "}
       <ChakraProvider theme={theme}>
-        <UseWalletProvider
-          chainId={4}
+      <UseWalletProvider
+          chainId={1337}
           connectors={{
             walletconnect: {
               rpcUrl:
-                "https://rinkeby.infura.io/v3/08ac79d88b5d4aea961ca36af7ea6ee7",
+                "HTTP://127.0.0.1:7545",
             },
           }}
         >

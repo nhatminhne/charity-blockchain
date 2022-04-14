@@ -1,3 +1,4 @@
+import React, {Component} from "react";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import NextLink from "next/link";
@@ -26,15 +27,18 @@ import {
   Progress,
 } from "@chakra-ui/react";
 
-import factory from "../smart-contract/factory";
-import web3 from "../smart-contract/web3";
-import Campaign from "../smart-contract/campaign";
+//import factory from "../smart-contract/factory";
+//import web3 from "../smart-contract/web3";
+//import Campaign from "../smart-contract/campaign";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 import { FaHandshake } from "react-icons/fa";
 import { FcShare, FcDonate, FcMoneyTransfer } from "react-icons/fc";
+import Web3 from "web3";
+import { useWallet } from "use-wallet";
+import Charity from "../src/abis/Charity.json"
 
 export async function getServerSideProps(context) {
-  const campaigns = await factory.methods.getDeployedCampaigns().call();
+  const campaigns = ""//await factory.methods.getDeployedCampaigns().call();
 
   console.log(campaigns);
 
@@ -156,7 +160,7 @@ function CampaignCard({
               >
                 <Text as="span" fontWeight={"bold"}>
                   {balance > 0
-                    ? web3.utils.fromWei(balance, "ether")
+                    ? Web3.utils.fromWei(balance, "ether")
                     : "0, Become a Donor 😄"}
                 </Text>
                 <Text
@@ -180,14 +184,14 @@ function CampaignCard({
               </Box>
 
               <Text fontSize={"md"} fontWeight="normal">
-                target of {web3.utils.fromWei(target, "ether")} ETH ($
+                target of {Web3.utils.fromWei(target, "ether")} ETH ($
                 {getWEIPriceInUSD(ethPrice, target)})
               </Text>
               <Progress
                 colorScheme="teal"
                 size="sm"
-                value={web3.utils.fromWei(balance, "ether")}
-                max={web3.utils.fromWei(target, "ether")}
+                value={Web3.utils.fromWei(balance, "ether")}
+                max={Web3.utils.fromWei(target, "ether")}
                 mt="2"
               />
             </Box>{" "}
@@ -201,9 +205,10 @@ function CampaignCard({
 export default function Home({ campaigns }) {
   const [campaignList, setCampaignList] = useState([]);
   const [ethPrice, updateEthPrice] = useState(null);
+  const wallet = useWallet();
 
   async function getSummary() {
-    try {
+    /*try {
       const summary = await Promise.all(
         campaigns.map((campaign, i) =>
           Campaign(campaigns[i]).methods.getSummary().call()
@@ -217,12 +222,29 @@ export default function Home({ campaigns }) {
       return summary;
     } catch (e) {
       console.log(e);
-    }
+    }*/
   }
 
   useEffect(() => {
-    getSummary();
+    loadBlockchainData();
   }, []);
+
+  async function loadBlockchainData() {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      await window.ethereum.enable()
+    }
+    else if (window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider)
+    }
+    const web3 = window.web3
+    const networkId = await web3.eth.net.getId()
+    const networkData = Charity.networks[networkId]
+    if(networkData) {
+      const charity = new web3.eth.Contract(Charity.abi, networkData.address)
+      console.log(charity)
+    } 
+  }
 
   return (
     <div>
