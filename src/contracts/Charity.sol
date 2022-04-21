@@ -5,9 +5,11 @@ contract Charity {
     uint public campaignCount = 0;
     uint public contributionCount = 0;
     uint public withdrawalCount = 0;
+    uint public withdrawalApproverCount = 0;
     mapping(uint => Campaign) public campaigns;
     mapping(uint => Contribution) public contributions;
     mapping(uint => Withdrawal) public withdrawals;
+    mapping(address => uint) public withdrawalApprovers;
 
     struct Campaign {
         uint id;
@@ -18,8 +20,10 @@ contract Charity {
         string description;
         string img;
         uint balance;
+        uint total;
         uint createAt;
         uint endAt;
+        uint donateCount;
     }
 
     struct Contribution {
@@ -39,6 +43,7 @@ contract Charity {
         bool isApprove;
         uint createAt;
         bool isWithdraw;
+        bool isCheck;
     }
 
     event CampaignCreated(
@@ -50,8 +55,10 @@ contract Charity {
         string description,
         string img,
         uint balance,
+        uint total,
         uint createAt,
-        uint endAt
+        uint endAt,
+        uint donateCount
     );
 
     constructor() public {
@@ -82,10 +89,10 @@ contract Charity {
         campaignCount++;
 
         //create campaignCount
-        campaigns[campaignCount] = Campaign(campaignCount, _name, msg.sender, _target, _minAmount, _description, _img, 0, now, _end);
+        campaigns[campaignCount] = Campaign(campaignCount, _name, msg.sender, _target, _minAmount, _description, _img, 0, 0, now, _end, 0);
 
         //trigger an event
-        emit CampaignCreated(campaignCount, _name, msg.sender, _target, _minAmount, _description, _img, 0, now, _end);
+        emit CampaignCreated(campaignCount, _name, msg.sender, _target, _minAmount, _description, _img, 0, 0,now, _end, 0);
     }
 
     function donateCampaign(address payable _deloyer, uint _id) public payable {
@@ -96,15 +103,30 @@ contract Charity {
 
         //make sure the msg.value >= minAmount
         require(msg.value >= _campaign.minAmount);
+        
+        //increase balance
+        _campaign.balance = _campaign.balance + msg.value;
+        _campaign.total = _campaign.total + msg.value;
+
+        //increase donateCount
+        bool checkContributor = false;
+        for(uint i = 1; i <= contributionCount; i++) {
+            if(contributions[i].campaignId == _campaign.id) {
+                //campaignContributors++;
+                if(contributions[i].owner == msg.sender) {
+                    checkContributor = true;
+                }
+            }
+        }
+        if(!checkContributor) {
+            _campaign.donateCount++;
+        }
 
         //_campaign.contributorCount ++;
         //_campaign.contributors[_campaign.contributorCount] = Contributor(_campaign.contributorCount, msg.sender, msg.value, now);
         //add new contribution
         contributionCount++;
         contributions[contributionCount] = Contribution(contributionCount, msg.sender, _id, msg.value, now);
-
-        //increase balance
-        _campaign.balance = _campaign.balance + msg.value;
         
         //transfer coins
         _deloyer.transfer(msg.value);
@@ -128,31 +150,38 @@ contract Charity {
         //increse withdrawalCount
         withdrawalCount++;
 
+        //mapping(address => uint) storage empty;
         //add withdrawal
-        withdrawals[withdrawalCount] = Withdrawal(withdrawalCount, _id, _amount, _description, 0, false, now, false);
+        withdrawals[withdrawalCount] = Withdrawal(withdrawalCount, _id, _amount, _description, 0, false, now, false, false);
     }
 
     function approveWithdrawal(uint _id) public {
         //require id > 0
         require(_id > 0);
         Withdrawal storage withdrawal = withdrawals[_id];
+        Campaign storage _campaign = campaigns[withdrawal.campaignId];
 
         //require sender is contributor
         bool checkContributor = false;
-        uint campaignContributors = 0;
+        uint campaignContributors = _campaign.donateCount;
         for(uint i = 1; i <= contributionCount; i++) {
             if(contributions[i].campaignId == withdrawal.campaignId) {
-                campaignContributors++;
+                //campaignContributors++;
                 if(contributions[i].owner == msg.sender) {
                     checkContributor = true;
                 }
             }
         }
-
         require(checkContributor == true);
 
         //increase approveCount
         withdrawal.approveCount++;
+
+        //increase withdrawalApproverCount
+        withdrawalApproverCount++;
+
+        //add to withdrawalApprovers
+        withdrawalApprovers[msg.sender] = withdrawal.id;
 
         //get half of contributors
         uint halfContributors = campaignContributors / 2;
@@ -163,11 +192,11 @@ contract Charity {
         }
     }
 
-    function getWithdrawal(uint _id) public payable {
+    function getWithdrawal(uint _id) public {
         //require id > 0
         require(_id > 0);
         Withdrawal storage withdrawal = withdrawals[_id];
-        Campaign storage campaign = campaigns[withdrawal.campaignId];
+        //Campaign storage campaign = campaigns[withdrawal.campaignId];
 
         //require isApprove == true
         require(withdrawal.isApprove == true);
@@ -177,6 +206,22 @@ contract Charity {
 
         //update iswithdrawal
         withdrawal.isWithdraw = true;
+    }
+
+    function confirmWithdrawal(uint _id) public payable {
+        //require id > 0
+        require(_id > 0);
+        Withdrawal storage withdrawal = withdrawals[_id];
+        Campaign storage campaign = campaigns[withdrawal.campaignId];
+
+        //require isApprove == true
+        require(withdrawal.isApprove == true);
+
+        //require isWithdraw == true
+        require(withdrawal.isWithdraw == true);
+
+        //isCheck == true
+        withdrawal.isCheck = true;
 
         //transfer coins
         campaign.owner.transfer(msg.value);
@@ -184,39 +229,4 @@ contract Charity {
         //update balance
         campaign.balance = campaign.balance - msg.value;
     }
-
-    /*function purchaseProduct(uint _id) public payable {
-        //fetch the productCount
-        Product memory _product = products[_id];
-
-        //fetch the owner
-        address payable _seller = _product.owner;
-        
-        //make sure the product has a valid id
-        require(_product.id > 0 && _product.id <= productCount);
-
-        //require that there is enough Ether in the transaction
-        require(msg.value >= _product.price);
-
-        //require that the product has not been purchase already
-        require(!_product.purchased);
-
-        //require that the buyer is not the seller
-        require(_seller != msg.sender);
-
-        //tranfer ownership to the buyer
-        _product.owner = msg.sender;
-
-        //mark as purchased
-        _product.purchased = true;
-
-        //Update the product
-        products[_id] = _product;
-
-        //pay the seller by sending them Ether
-        address(_seller).transfer(msg.value);
-
-        //trigger an event
-        emit ProductPurchased(productCount, _product.name, _product.price, msg.sender, true);
-    }*/
 }

@@ -15,33 +15,13 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 import { useWallet } from "use-wallet";
-import Charity from "../src/abis/Charity.json"
 
 import NextLink from "next/link";
 import DarkModeSwitch from "./DarkModeSwitch";
 import { ChevronDownIcon } from "@chakra-ui/icons";
-import Web3 from "web3";
-import { useEffect } from "react";
 
 export default function NavBar() {
   const wallet = useWallet();
-
-  async function loadBlockchainData() {
-    if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum)
-      await window.ethereum.enable()
-    }
-    else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider)
-    }
-    const web3 = window.web3
-    const networkId = await web3.eth.net.getId()
-    const networkData = Charity.networks[networkId]
-    if(networkData) {
-      const charity = new web3.eth.Contract(Charity.abi, networkData.address)
-      console.log(charity)
-    } 
-  }
 
   return (
     <Box>

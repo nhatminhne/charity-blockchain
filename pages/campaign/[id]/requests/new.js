@@ -4,7 +4,7 @@ import { ArrowBackIcon } from "@chakra-ui/icons";
 import { useWallet } from "use-wallet";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getETHPrice, getETHPriceInUSD } from "../../../../lib/getETHPrice";
 import {
   Box,
@@ -25,13 +25,13 @@ import {
   FormHelperText,
   Textarea,
 } from "@chakra-ui/react";
-import web3 from "../../../../smart-contract/web3";
-import Campaign from "../../../../smart-contract/campaign";
+import Web3 from "web3";
 import { useAsync } from "react-use";
+import loadBlockchainData from "../../../../src/factory";
 
 export default function NewRequest() {
   const router = useRouter();
-  const { id } = router.query;
+  const campaignId = router.query.id;
   const {
     handleSubmit,
     register,
@@ -43,6 +43,10 @@ export default function NewRequest() {
   const [inUSD, setInUSD] = useState();
   const [ETHPrice, setETHPrice] = useState(0);
   const wallet = useWallet();
+  const [charityContract, setCharityContract] = useState([]);
+  const [errAmount, setErrAmount] = useState(false);
+  const [campaign, setCampaign] = useState([]);
+  
   useAsync(async () => {
     try {
       const result = await getETHPrice();
@@ -51,20 +55,39 @@ export default function NewRequest() {
       console.log(error);
     }
   }, []);
+
+  useEffect(() => {
+    campaignId && getContract()
+  }, [campaignId])
+
+  async function getContract() {
+    const contractCharity = await loadBlockchainData()
+    setCharityContract(contractCharity)
+
+    const tmpCampaign = await contractCharity.methods.campaigns(campaignId).call()
+    setCampaign(tmpCampaign)
+  }
+
   async function onSubmit(data) {
     console.log(data);
-    const campaign = Campaign(id);
     try {
-      const accounts = await web3.eth.getAccounts();
-      await campaign.methods
-        .createRequest(
-          data.description,
-          web3.utils.toWei(data.value, "ether"),
-          data.recipient
-        )
-        .send({ from: accounts[0] });
-
-      router.push(`/campaign/${id}/requests`);
+      if (Web3.utils.toWei(data.value, "ether") > parseInt(campaign.balance)) {
+        setErrAmount(true)
+      } else {
+        setErrAmount(false)
+        setError(false)
+        const demo = await charityContract.methods
+          .createWithdrawal(
+            campaignId,
+            Web3.utils.toWei(data.value, "ether"),
+            data.description
+          )
+          .send({
+            from: wallet.account
+          });
+        console.log("demo: ",demo)
+        router.push(`/campaign/${campaignId}/requests`);
+      }
     } catch (err) {
       setError(err.message);
       console.log(err);
@@ -82,114 +105,119 @@ export default function NewRequest() {
         <Stack spacing={8} mx={"auto"} maxW={"2xl"} py={12} px={6}>
           <Text fontSize={"lg"} color={"teal.400"} justifyContent="center">
             <ArrowBackIcon mr={2} />
-            <NextLink href={`/campaign/${id}/requests`}>
+            <NextLink href={`/campaign/${campaignId}/requests`}>
               Back to Requests
             </NextLink>
           </Text>
           <Stack>
             <Heading fontSize={"4xl"}>Create a Withdrawal Request 💸</Heading>
           </Stack>
-          <Box
-            rounded={"lg"}
-            bg={useColorModeValue("white", "gray.700")}
-            boxShadow={"lg"}
-            p={8}
-          >
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack spacing={4}>
-                <FormControl id="description">
-                  <FormLabel>Request Description</FormLabel>
-                  <Textarea
-                    {...register("description", { required: true })}
-                    isDisabled={isSubmitting}
-                  />
-                </FormControl>
-                <FormControl id="value">
-                  <FormLabel>Amount in Ether</FormLabel>
-                  <InputGroup>
-                    {" "}
-                    <Input
-                      type="number"
-                      {...register("value", { required: true })}
-                      isDisabled={isSubmitting}
-                      onChange={(e) => {
-                        setInUSD(Math.abs(e.target.value));
-                      }}
-                      step="any"
-                    />{" "}
-                    <InputRightAddon children="ETH" />
-                  </InputGroup>
-                  {inUSD ? (
-                    <FormHelperText>
-                      ~$ {getETHPriceInUSD(ETHPrice, inUSD)}
-                    </FormHelperText>
-                  ) : null}
-                </FormControl>
+          {campaign.balance != undefined ? (
+            campaign.owner == wallet.account ? (
+              <Box
+                rounded={"lg"}
+                bg={useColorModeValue("white", "gray.700")}
+                boxShadow={"lg"}
+                p={8}
+              >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  <Stack spacing={4}>
+                    <FormControl id="description">
+                      <FormLabel>Request Description</FormLabel>
+                      <Textarea
+                        {...register("description", { required: true })}
+                        isDisabled={isSubmitting}
+                      />
+                    </FormControl>
+                    <FormControl id="value">
+                      <FormLabel>Amount in Ether</FormLabel>
+                      <InputGroup>
+                        {" "}
+                        <Input
+                          type="number"
+                          {...register("value", { required: true })}
+                          isDisabled={isSubmitting}
+                          onChange={(e) => {
+                            setInUSD(Math.abs(e.target.value));
+                          }}
+                          step="any"
+                        />{" "}
+                        <InputRightAddon children="ETH" />
+                      </InputGroup>
+                      {inUSD ? (
+                        <FormHelperText>
+                          ~$ {getETHPriceInUSD(ETHPrice, inUSD)}
+                        </FormHelperText>
+                      ) : null}
+                      <FormHelperText>
+                        Withdrawal Amount must be less than Campaign Balance: {Web3.utils.fromWei(campaign.balance, "ether")}
+                      </FormHelperText>
+                    </FormControl>
 
-                <FormControl id="recipient">
-                  <FormLabel htmlFor="recipient">
-                    Recipient Ethereum Wallet Address
-                  </FormLabel>
-                  <Input
-                    name="recipient"
-                    {...register("recipient", {
-                      required: true,
-                    })}
-                    isDisabled={isSubmitting}
-                  />
-                </FormControl>
-                {errors.description || errors.value || errors.recipient ? (
-                  <Alert status="error">
-                    <AlertIcon />
-                    <AlertDescription mr={2}>
-                      {" "}
-                      All Fields are Required
-                    </AlertDescription>
-                  </Alert>
-                ) : null}
-                {error ? (
-                  <Alert status="error">
-                    <AlertIcon />
-                    <AlertDescription mr={2}> {error}</AlertDescription>
-                  </Alert>
-                ) : null}
-                <Stack spacing={10}>
-                  {wallet.status === "connected" ? (
-                    <Button
-                      bg={"teal.400"}
-                      color={"white"}
-                      _hover={{
-                        bg: "teal.500",
-                      }}
-                      isLoading={isSubmitting}
-                      type="submit"
-                    >
-                      Create Withdrawal Request
-                    </Button>
-                  ) : (
-                    <Stack spacing={3}>
-                      <Button
-                        color={"white"}
-                        bg={"teal.400"}
-                        _hover={{
-                          bg: "teal.300",
-                        }}
-                        onClick={() => wallet.connect()}
-                      >
-                        Connect Wallet{" "}
-                      </Button>
-                      <Alert status="warning">
+          
+                    {errors.description || errors.value ? (
+                      <Alert status="error">
                         <AlertIcon />
                         <AlertDescription mr={2}>
-                          Please Connect Your Wallet First to Create a Campaign
+                          {" "}
+                          All Fields are Required
                         </AlertDescription>
                       </Alert>
+                    ) : null}
+                    {error ? (
+                      <Alert status="error">
+                        <AlertIcon />
+                        <AlertDescription mr={2}> {error}</AlertDescription>
+                      </Alert>
+                    ) : null}
+                    {errAmount ? (
+                      <Alert status="error">
+                        <AlertIcon />
+                        <AlertDescription mr={2}>
+                          {" "}
+                          Withdrawal Amount must be less than Campaign Balance
+                        </AlertDescription>
+                      </Alert>
+                    ) : null}
+                    <Stack spacing={10}>
+                      {wallet.status === "connected" ? (
+                        <Button
+                          bg={"teal.400"}
+                          color={"white"}
+                          _hover={{
+                            bg: "teal.500",
+                          }}
+                          isLoading={isSubmitting}
+                          type="submit"
+                        >
+                          Create Withdrawal Request
+                        </Button>
+                      ) : (
+                        <Stack spacing={3}>
+                          <Button
+                            color={"white"}
+                            bg={"teal.400"}
+                            _hover={{
+                              bg: "teal.300",
+                            }}
+                            onClick={() => wallet.connect()}
+                          >
+                            Connect Wallet{" "}
+                          </Button>
+                          <Alert status="warning">
+                            <AlertIcon />
+                            <AlertDescription mr={2}>
+                              Please Connect Your Wallet First to Create a Campaign
+                            </AlertDescription>
+                          </Alert>
+                        </Stack>
+                      )}
                     </Stack>
-                  )}
-                </Stack>
-              </Stack>
-            </form>
-          </Box>
+                  </Stack>
+                </form>
+              </Box>
+            ) : (<Text>You are not the Campaign owner</Text>)
+          ) : (<Text>Loading...</Text>)}
         </Stack>
       </main>
     </div>

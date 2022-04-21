@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Head from "next/head";
 import { useAsync } from "react-use";
 import { useRouter } from "next/router";
@@ -26,9 +26,11 @@ import {
 import NextLink from "next/link";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import { getETHPrice, getETHPriceInUSD } from "../../lib/getETHPrice";
+import loadBlockchainData from "../../src/factory";
 
-import factory from "../../smart-contract/factory";
-import web3 from "../../smart-contract/web3";
+//import factory from "../../smart-contract/factory";
+//import web3 from "../../smart-contract/web3";
+import Web3 from "web3";
 
 export default function NewCampaign() {
   const {
@@ -44,12 +46,22 @@ export default function NewCampaign() {
   const [minContriInUSD, setMinContriInUSD] = useState();
   const [targetInUSD, setTargetInUSD] = useState();
   const [ETHPrice, setETHPrice] = useState(0);
+  const [charityContract, setCharityContract] = useState([]);
+
+  useEffect(() => {
+    getContract()
+  }, []);
+
+  async function getContract() {
+    setCharityContract(await loadBlockchainData());
+  }
+
   useAsync(async () => {
     try {
       const result = await getETHPrice();
       setETHPrice(result);
     } catch (error) {
-      console.log(error);
+      //console.log(error);
     }
   }, []);
   async function onSubmit(data) {
@@ -61,17 +73,18 @@ export default function NewCampaign() {
       data.target
     );
     try {
-      const accounts = await web3.eth.getAccounts();
-      await factory.methods
+      //const accounts = await web3.eth.getAccounts();
+      await charityContract.methods
         .createCampaign(
-          web3.utils.toWei(data.minimumContribution, "ether"),
           data.campaignName,
+          Web3.utils.toWei(data.target, "ether"),
+          Web3.utils.toWei(data.minimumContribution, "ether"),
           data.description,
           data.imageUrl,
-          web3.utils.toWei(data.target, "ether")
+          1650424714000
         )
         .send({
-          from: accounts[0],
+          from: wallet.account,
         });
 
       router.push("/");
@@ -80,6 +93,7 @@ export default function NewCampaign() {
       console.log(err);
     }
   }
+  //console.log("contract in new: ",charityContract)
 
   return (
     <div>

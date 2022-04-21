@@ -36,8 +36,9 @@ import { FcShare, FcDonate, FcMoneyTransfer } from "react-icons/fc";
 import Web3 from "web3";
 import { useWallet } from "use-wallet";
 import Charity from "../src/abis/Charity.json"
+import loadBlockchainData from "../src/factory";
 
-export async function getServerSideProps(context) {
+/*export async function getServerSideProps(context) {
   const campaigns = ""//await factory.methods.getDeployedCampaigns().call();
 
   console.log(campaigns);
@@ -45,7 +46,7 @@ export async function getServerSideProps(context) {
   return {
     props: { campaigns },
   };
-}
+}*/
 
 const Feature = ({ title, text, icon }) => {
   return (
@@ -202,48 +203,43 @@ function CampaignCard({
   );
 }
 
-export default function Home({ campaigns }) {
-  const [campaignList, setCampaignList] = useState([]);
+export default function Home() {
+  const [campaignList, setCampaignList] = useState([])
   const [ethPrice, updateEthPrice] = useState(null);
   const wallet = useWallet();
-
-  async function getSummary() {
-    /*try {
-      const summary = await Promise.all(
-        campaigns.map((campaign, i) =>
-          Campaign(campaigns[i]).methods.getSummary().call()
-        )
-      );
-      const ETHPrice = await getETHPrice();
-      updateEthPrice(ETHPrice);
-      console.log("summary ", summary);
-      setCampaignList(summary);
-
-      return summary;
-    } catch (e) {
-      console.log(e);
-    }*/
-  }
+  const [charityContract, setCharityContract] = useState([]);
 
   useEffect(() => {
-    loadBlockchainData();
-  }, []);
+    getContract(getCampaigns)
+  }, [])
+  //console.log("hi: ",campaignList)
 
-  async function loadBlockchainData() {
-    if (window.ethereum) {
-      window.web3 = new Web3(window.ethereum)
-      await window.ethereum.enable()
+  async function getContract(callback) {
+    const contractCharity = await loadBlockchainData()
+    try {
+      const num = await contractCharity.methods.contributionCount().call()
     }
-    else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider)
+    catch(err) {}
+    //console.log(num)
+    setCharityContract(contractCharity)
+    callback(contractCharity)
+  }
+
+  async function getCampaigns(contractCharity) {
+    const ETHPrice = await getETHPrice();
+    updateEthPrice(ETHPrice);
+
+    const campaignCount = await contractCharity.methods.campaignCount().call()
+
+    for (var i = 1; i <= campaignCount; i++) {
+      const campaign = await contractCharity.methods.campaigns(i).call()
+      //const oldList = campaignList
+      //const newList = oldList.push({campaign})
+      //setCampaignList(newList)
+      setCampaignList(prev => [...prev, campaign])
+      //campaignList.push(campaign)
+      //console.log(campaign);
     }
-    const web3 = window.web3
-    const networkId = await web3.eth.net.getId()
-    const networkData = Charity.networks[networkId]
-    if(networkData) {
-      const charity = new web3.eth.Contract(Charity.abi, networkData.address)
-      console.log(charity)
-    } 
   }
 
   return (
@@ -299,13 +295,13 @@ export default function Home({ campaigns }) {
                 return (
                   <div key={i}>
                     <CampaignCard
-                      name={el[5]}
-                      description={el[6]}
-                      creatorId={el[4]}
-                      imageURL={el[7]}
-                      id={campaigns[i]}
-                      target={el[8]}
-                      balance={el[1]}
+                      name={el[1]}
+                      description={el[5]}
+                      creatorId={el[2]}
+                      imageURL={el[6]}
+                      id={el[0]}
+                      target={el[3]}
+                      balance={el[7]}
                       ethPrice={ethPrice}
                     />
                   </div>

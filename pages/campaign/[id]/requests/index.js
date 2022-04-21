@@ -37,11 +37,15 @@ import {
   CheckCircleIcon,
   WarningIcon,
 } from "@chakra-ui/icons";
-import web3 from "../../../../smart-contract/web3";
-import Campaign from "../../../../smart-contract/campaign";
-import factory from "../../../../smart-contract/factory";
+//import web3 from "../../../../smart-contract/web3";
+//import Campaign from "../../../../smart-contract/campaign";
+//import factory from "../../../../smart-contract/factory";
+import Web3 from "web3";
+import loadBlockchainData from "../../../../src/factory";
+import filterWithdrawal, { contributorsCount } from "../../../../src/filterWithdrawal";
+import { useWallet } from "use-wallet";
 
-export async function getServerSideProps({ params }) {
+/*export async function getServerSideProps({ params }) {
   const campaignId = params.id;
   const campaign = Campaign(campaignId);
   const requestCount = await campaign.methods.getRequestsCount().call();
@@ -59,7 +63,7 @@ export async function getServerSideProps({ params }) {
       ETHPrice,
     },
   };
-}
+}*/
 
 const RequestRow = ({
   id,
@@ -68,22 +72,59 @@ const RequestRow = ({
   campaignId,
   disabled,
   ETHPrice,
+  campaign,
+  charityContract,
 }) => {
   const router = useRouter();
-  const readyToFinalize = request.approvalCount > approversCount / 2;
+  const readyToFinalize = request.approveCount > approversCount / 2;
   const [errorMessageApprove, setErrorMessageApprove] = useState();
   const [loadingApprove, setLoadingApprove] = useState(false);
   const [errorMessageFinalize, setErrorMessageFinalize] = useState();
   const [loadingFinalize, setLoadingFinalize] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [isContributor, setIsContributor] = useState(false)
+  const wallet = useWallet();
+
+  useEffect(() => {
+    checking()
+  }, [wallet])
+
+  const checking = async () => {
+    setIsContributor(false)
+    const contributionCount = await charityContract.methods.contributionCount().call()
+    for(let i = 1; i <= contributionCount; i++) {
+      const contributor = await charityContract.methods.contributions(i).call()
+      if(contributor.campaignId == campaignId && contributor.owner == wallet.account) {
+        //console.log("con: ",contributor)
+        setIsContributor(true)
+      }
+    }
+
+    if(wallet.status == "connected") {
+      const withdrawalApprover = await charityContract.methods.withdrawalApprovers(wallet.account.toString()).call()
+      if(withdrawalApprover == campaignId) {
+        setIsApproved(true)
+      } else {
+        setIsApproved(false)
+      }
+    }
+  }
+
   const onApprove = async () => {
     setLoadingApprove(true);
     try {
-      const campaign = Campaign(campaignId);
+      /*const campaign = Campaign(campaignId);
       const accounts = await web3.eth.getAccounts();
       await campaign.methods.approveRequest(id).send({
         from: accounts[0],
       });
-      router.reload();
+      router.reload();*/
+      await charityContract.methods
+        .approveWithdrawal(request.id)
+        .send({
+          from: wallet.account,
+        });
+        router.reload();
     } catch (err) {
       setErrorMessageApprove(err.message);
     } finally {
@@ -91,14 +132,16 @@ const RequestRow = ({
     }
   };
 
+  
+
   const onFinalize = async () => {
     setLoadingFinalize(true);
-    try {
-      const campaign = Campaign(campaignId);
-      const accounts = await web3.eth.getAccounts();
-      await campaign.methods.finalizeRequest(id).send({
-        from: accounts[0],
-      });
+    try {      
+      await charityContract.methods
+        .getWithdrawal(request.id)
+        .send({
+          from: wallet.account,
+        });
       router.reload();
     } catch (err) {
       setErrorMessageFinalize(err.message);
@@ -119,21 +162,22 @@ const RequestRow = ({
       <Td>{id} </Td>
       <Td>{request.description}</Td>
       <Td isNumeric>
-        {web3.utils.fromWei(request.value, "ether")}ETH ($
-        {getWEIPriceInUSD(ETHPrice, request.value)})
+        {Web3.utils.fromWei(request.amount, "ether")}ETH ($
+        {getWEIPriceInUSD(ETHPrice, request.amount)})
       </Td>
       <Td>
         <Link
           color="teal.500"
-          href={`https://rinkeby.etherscan.io/address/${request.recipient}`}
+          //href={`https://rinkeby.etherscan.io/address/${request.recipient}`}
+          href="/"
           isExternal
         >
           {" "}
-          {request.recipient.substr(0, 10) + "..."}
+          {campaign.owner.substr(0, 10) + "..."}
         </Link>
       </Td>
       <Td>
-        {request.approvalCount}/{approversCount}
+        {request.approveCount}/{approversCount}
       </Td>
       <Td>
         <HStack spacing={2}>
@@ -149,9 +193,9 @@ const RequestRow = ({
               display={errorMessageApprove ? "inline-block" : "none"}
             />
           </Tooltip>
-          {request.complete ? (
+          {request.isApprove ? (
             <Tooltip
-              label="This Request has been finalized & withdrawn to the recipient,it may then have less no of approvers"
+              label="This Request has been approved, it may then have less no of approvers"
               bg={useColorModeValue("white", "gray.700")}
               placement={"top"}
               color={useColorModeValue("gray.800", "white")}
@@ -170,7 +214,7 @@ const RequestRow = ({
                 color: "white",
               }}
               onClick={onApprove}
-              isDisabled={disabled || request.approvalCount == approversCount}
+              isDisabled={disabled || request.approvalCount == approversCount || wallet.status !== "connected" | !isContributor || isApproved}
               isLoading={loadingApprove}
             >
               Approve
@@ -192,9 +236,9 @@ const RequestRow = ({
             mr="2"
           />
         </Tooltip>
-        {request.complete ? (
+        {request.isWithdraw ? (
           <Tooltip
-              label="This Request has been finalized & withdrawn to the recipient,it may then have less no of approvers"
+              label="This Request has been finalized & withdrawn to the campaign owner in 12 hours, it may then have less no of approvers"
             bg={useColorModeValue("white", "gray.700")}
             placement={"top"}
             color={useColorModeValue("gray.800", "white")}
@@ -213,7 +257,7 @@ const RequestRow = ({
                 bg: "green.600",
                 color: "white",
               }}
-              isDisabled={disabled || (!request.complete && !readyToFinalize)}
+              isDisabled={disabled || (!request.complete && !readyToFinalize) || wallet.account !== campaign.owner}
               onClick={onFinalize}
               isLoading={loadingFinalize}
             >
@@ -242,43 +286,79 @@ const RequestRow = ({
   );
 };
 
-export default function Requests({
+export default function Requests() {
+  const router = useRouter();
+  const wallet = useWallet();
+  const campaignId = router.query.id;
+  const [requestsList, setRequestsList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [balance, setBalance] = useState(0);
+  const [name, setName] = useState('')
+  const [approversCount, setApproversCount] = useState(0)
+  const [ETHPrice, updateEthPrice] = useState(0);
+  const [FundNotAvailable, setFundNotAvailable] = useState(false);
+  const [campaign, setCampaign] = useState([]);
+  const [charityContract, setCharityContract] = useState([]);
+  const [isOwner, setIsOwner] = useState(true);
+
+  useEffect(() => {
+    //getRequests();
+    campaignId && getContract(getCampaign)
+    if (balance == 0) {
+      setFundNotAvailable(true);
+    }
+  }, [campaignId]);
+
+  /*useEffect(() => {
+    setIsOwner(false)
+    if(wallet.status == "connected") {
+      try {
+        if(wallet.account == campaign.owner) {
+          setIsOwner(true)
+        }
+      }catch(err) {}
+    }
+  }, [wallet.account])*/
+
+  async function getContract(callback) {
+    const contractCharity = await loadBlockchainData()
+    setCharityContract(contractCharity)
+    callback(contractCharity)
+    //console.log("contractCharity", contractCharity)
+  }
+
+  async function getCampaign(contractCharity) {
+    const ETHPrice = await getETHPrice();
+    updateEthPrice(ETHPrice);
+
+    //try{
+      const tmpCampaign = await contractCharity.methods.campaigns(campaignId).call();
+      
+      setBalance(tmpCampaign.balance)
+      setName(tmpCampaign.name)
+      if (tmpCampaign.balance > 0) {
+        setFundNotAvailable(false);
+        setIsLoading(false);
+      }
+      //console.log(tmpCampaign)
+      setCampaign(tmpCampaign)
+      const tmpApproversCount = tmpCampaign.donateCount
+      setApproversCount(tmpApproversCount)
+    //}catch{
+      //setCampaign({})
+    //}
+   
+    const tmpWithdrawals = await filterWithdrawal(campaignId)
+    setRequestsList(tmpWithdrawals || [])
+  }
+  /*{
   campaignId,
   requestCount,
   approversCount,
   balance,
   name,
   ETHPrice,
-}) {
-  const [requestsList, setRequestsList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [FundNotAvailable, setFundNotAvailable] = useState(false);
-  const campaign = Campaign(campaignId);
-  async function getRequests() {
-    try {
-      const requests = await Promise.all(
-        Array(parseInt(requestCount))
-          .fill()
-          .map((element, index) => {
-            return campaign.methods.requests(index).call();
-          })
-      );
-
-      console.log("requests", requests);
-      setRequestsList(requests);
-      setIsLoading(false);
-      return requests;
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  useEffect(() => {
-    if (balance == 0) {
-      setFundNotAvailable(true);
-    }
-    getRequests();
-  }, []);
+} */
 
   return (
     <div>
@@ -304,7 +384,7 @@ export default function Requests({
               Campaign Balance :{" "}
               <Text as="span" fontWeight={"bold"} fontSize="lg">
                 {balance > 0
-                  ? web3.utils.fromWei(balance, "ether")
+                  ? Web3.utils.fromWei(balance, "ether")
                   : "0, Become a Donor 😄"}
               </Text>
               <Text
@@ -353,7 +433,8 @@ export default function Requests({
                 </Heading>
               </Box>
               <Spacer />
-              <Box py="2">
+              {wallet.account == campaign.owner ? (
+                <Box py="2">
                 <NextLink href={`/campaign/${campaignId}/requests/new`}>
                   <Button
                     display={{ sm: "inline-flex" }}
@@ -371,6 +452,7 @@ export default function Requests({
                   </Button>
                 </NextLink>
               </Box>
+              ) : null}
             </Flex>{" "}
             <Box overflowX="auto">
               <Table>
@@ -391,19 +473,21 @@ export default function Requests({
                   {requestsList.map((request, index) => {
                     return (
                       <RequestRow
-                        key={index}
-                        id={index}
+                        key={request.id}
+                        id={request.id}
                         request={request}
                         approversCount={approversCount}
-                        campaignId={campaignId}
+                        campaignId={request.campaignId}
                         disabled={FundNotAvailable}
                         ETHPrice={ETHPrice}
+                        campaign={campaign}
+                        charityContract={charityContract}
                       />
                     );
                   })}
                 </Tbody>
                 <TableCaption textAlign="left" ml="-2">
-                  Found {requestCount} Requests
+                  Found {requestsList.length} Requests
                 </TableCaption>
               </Table>
             </Box>
@@ -447,29 +531,31 @@ export default function Requests({
                 >
                   No Requests yet for {name} Campaign
                 </Heading>
-                <Text
-                  textAlign={useBreakpointValue({ base: "center" })}
-                  color={useColorModeValue("gray.600", "gray.300")}
-                  fontSize="sm"
-                >
-                  Create a Withdrawal Request to Withdraw funds from the
-                  Campaign😄
-                </Text>
-
-                <Button
-                  fontSize={"md"}
-                  fontWeight={600}
-                  color={"white"}
-                  bg={"teal.400"}
-                  _hover={{
-                    bg: "teal.300",
-                  }}
-                >
-                  <NextLink href={`/campaign/${campaignId}/requests/new`}>
-                    Create Withdrawal Request
-                  </NextLink>
-                </Button>
-
+                {isOwner ? (
+                  <>
+                    <Text
+                      textAlign={useBreakpointValue({ base: "center" })}
+                      color={useColorModeValue("gray.600", "gray.300")}
+                      fontSize="sm"
+                    >
+                      Create a Withdrawal Request to Withdraw funds from the
+                    Campaign😄
+                    </Text>
+                    <Button
+                      fontSize={"md"}
+                      fontWeight={600}
+                      color={"white"}
+                      bg={"teal.400"}
+                      _hover={{
+                        bg: "teal.300",
+                    }}
+                    >
+                    <NextLink href={`/campaign/${campaignId}/requests/new`}>
+                      Create Withdrawal Request
+                    </NextLink>
+                    </Button>
+                  </>
+                ) : null}
                 <Button
                   fontSize={"md"}
                   fontWeight={600}
@@ -479,7 +565,7 @@ export default function Requests({
                     bg: "gray.300",
                   }}
                 >
-                  <NextLink href={`/campaign/${campaignId}/`}>
+                  <NextLink href={`/campaign/${campaignId}`}>
                     Go to Campaign
                   </NextLink>
                 </Button>

@@ -55,6 +55,7 @@ contract('Charity', ([deployer, creator, contributor]) => {
             assert.equal(event.img, 'imgggggg', 'img is correct')
             assert.equal(event.balance, '0', 'balance is correct')
             assert.equal(event.endAt, '1650002181', 'end time is correct')
+            assert.equal(event.donateCount, '0', 'donateCount is correct')
 
             //fairluer: product must have a name
             await charity.createCampaign('', web3.utils.toWei('0.1', 'Ether'), web3.utils.toWei('0.0001', 'Ether'), 'helloooooooo', 'imgggggg', 1650002181, {from: creator}).should.be.rejected;
@@ -95,6 +96,7 @@ contract('Charity', ([deployer, creator, contributor]) => {
             assert.equal(demoo.owner, contributor, "contributor is correct")
             assert.equal(demoo.amount.toString(), price.toString(), "amount is correct")
             assert.equal(demoo.campaignId.toString(), demo.id.toString(), "campaign id is correct")
+            assert.equal(demo.donateCount, '1', 'donateCount is correct')
             //console.log(demoo)
         })
 
@@ -131,6 +133,7 @@ contract('Charity', ([deployer, creator, contributor]) => {
             assert.equal(demoo.owner, creator, "contributor is correct")
             assert.equal(demoo.amount.toString(), price.toString(), "amount is correct")
             assert.equal(demoo.campaignId.toString(), demo.id.toString(), "campaign id is correct")
+            assert.equal(demo.donateCount, '2', 'donateCount is correct')
             //console.log(demoo)
         })
 
@@ -147,6 +150,7 @@ contract('Charity', ([deployer, creator, contributor]) => {
             assert.equal(withdrawal.approveCount.toString(), "0", "approveCount is correct")
             assert.equal(withdrawal.isApprove.toString(), "false", "isApprove is correct")
             assert.equal(withdrawal.isWithdraw.toString(), "false", "isWithdraw is correct")
+            assert.equal(withdrawal.isCheck.toString(), "false", "isCheck is correct")
         })
 
         it('approve withdrawal', async() => {
@@ -154,9 +158,13 @@ contract('Charity', ([deployer, creator, contributor]) => {
 
             let withdrawalCount = await charity.withdrawalCount()
             let withdrawal = await charity.withdrawals(withdrawalCount)
+            let withdrawalApprover = await charity.withdrawalApprovers(contributor)
+            //let num = 1;
 
             assert.equal(withdrawal.isApprove.toString(), "false", "isApprove is correct")
             assert.equal(withdrawal.approveCount.toString(), "1", "approveCount is correct")
+            assert.equal(withdrawalApprover.toString(), withdrawal.id.toString(), "withdrawalApprovers is correct")
+            //assert.equal(withdrawal.history(withdrawal.approveCount).toString(), contributor.toString(), "contributor is correct")
         })
 
         it('approve withdrawal more', async() => {
@@ -164,9 +172,22 @@ contract('Charity', ([deployer, creator, contributor]) => {
 
             let withdrawalCount = await charity.withdrawalCount()
             let withdrawal = await charity.withdrawals(withdrawalCount)
+            let withdrawalApprover = await charity.withdrawalApprovers(creator)
+            //let num = 1;
 
             assert.equal(withdrawal.isApprove.toString(), "true", "isApprove is correct")
             assert.equal(withdrawal.approveCount.toString(), "2", "approveCount is correct")
+            assert.equal(withdrawalApprover.toString(), withdrawal.id.toString(), "withdrawalApprovers is correct")
+            //assert.equal(withdrawal.methods.history(withdrawal.approveCount).call().toString(), contributor.toString(), "contributor is correct")
+        })
+
+        it('request withdrawal', async() => {
+            result = await charity.getWithdrawal(1)
+
+            let withdrawalCount = await charity.withdrawalCount()
+            let withdrawal = await charity.withdrawals(withdrawalCount)
+
+            assert.equal(withdrawal.isWithdraw.toString(), "true", "isWithdraw is correct")
         })
 
         it('get withdrawal', async() => {
@@ -191,10 +212,10 @@ contract('Charity', ([deployer, creator, contributor]) => {
 
             //console.log(withdrawal.amount.toString())
 
-            result = await charity.getWithdrawal(withdrawalCount, {from: deployer, value: withdrawal.amount.toString()})
+            result = await charity.confirmWithdrawal(withdrawalCount, {from: deployer, value: withdrawal.amount.toString()})
 
             withdrawal = await charity.withdrawals(withdrawalCount)
-            assert.equal(withdrawal.isWithdraw.toString(), "true", "isWithdraw is correct")
+            assert.equal(withdrawal.isCheck.toString(), "true", "isCheck is correct")
 
             //get new balance of deployer
             let newSellerBalance
