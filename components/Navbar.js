@@ -125,10 +125,10 @@ export default function NavBar() {
                   _hover={{
                     bg: "teal.300",
                   }}
-                  onClick={() => {
-                    wallet.connect();
+                  onClick={() => 
+                    wallet.connect()
                     //loadBlockchainData();
-                  }}
+                  }
                 >
                   Connect Wallet{" "}
                 </Button>

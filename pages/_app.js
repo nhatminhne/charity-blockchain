@@ -18,11 +18,11 @@ function MyApp({ Component, pageProps }) {
       {" "}
       <ChakraProvider theme={theme}>
       <UseWalletProvider
-          chainId={1337}
+          chainId={42}
           connectors={{
             walletconnect: {
               rpcUrl:
-                "HTTP://127.0.0.1:7545",
+                "https://kovan.infura.io/v3/4aff896c9abf453ab3e9d97d089026fa",
             },
           }}
         >
