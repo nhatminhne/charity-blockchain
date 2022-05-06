@@ -17666,6 +17666,12 @@
       "links": {},
       "address": "0x79F7F3ccf4C947D5ddB0757fC9ab8566ed9D73Cc",
       "transactionHash": "0x68f2e48b163b90d22baa5a27846aae14063aaafd1c7afcaa1ef7b05d507014c3"
+    },
+    "42": {
+      "events": {},
+      "links": {},
+      "address": "0xdf07acbe455508d82cade8bdb96913af4bea43a7",
+      "transactionHash": "0x10bc010732c90e3b4d73950ca28e930269fba31c00c57bf95a54ad909e284df8"
     }
   },
   "schemaVersion": "3.0.2",
