@@ -154,7 +154,7 @@ const RequestRow = ({
     <Tr
       bg={
         readyToFinalize && !request.complete
-          ? useColorModeValue("teal.100", "teal.700")
+          ? useColorModeValue("blue.100", "blue.700")
           : useColorModeValue("gray.100", "gray.700")
       }
       opacity={request.complete ? "0.4" : "1"}
@@ -167,7 +167,7 @@ const RequestRow = ({
       </Td>
       <Td>
         <Link
-          color="teal.500"
+          color="blue.500"
           //href={`https://rinkeby.etherscan.io/address/${request.recipient}`}
           href="/"
           isExternal
@@ -202,7 +202,7 @@ const RequestRow = ({
               fontSize={"1em"}
             >
               <CheckCircleIcon
-                color={useColorModeValue("green.600", "green.300")}
+                color={useColorModeValue("blue.600", "blue.300")}
               />
             </Tooltip>
           ) : (
@@ -245,16 +245,16 @@ const RequestRow = ({
             fontSize={"1em"}
           >
             <CheckCircleIcon
-              color={useColorModeValue("green.600", "green.300")}
+              color={useColorModeValue("blue.600", "blue.300")}
             />
           </Tooltip>
         ) : (
           <HStack spacing={2}>
             <Button
-              colorScheme="green"
+              colorScheme="blue"
               variant="outline"
               _hover={{
-                bg: "green.600",
+                bg: "blue.600",
                 color: "white",
               }}
               isDisabled={disabled || (!request.complete && !readyToFinalize) || wallet.account !== campaign.owner}
@@ -273,7 +273,7 @@ const RequestRow = ({
             >
               <InfoIcon
                 as="span"
-                color={useColorModeValue("teal.800", "white")}
+                color={useColorModeValue("blue.800", "white")}
                 display={
                   readyToFinalize && !request.complete ? "inline-block" : "none"
                 }
@@ -372,7 +372,7 @@ export default function Requests() {
         <Container px={{ base: "4", md: "12" }} maxW={"7xl"} align={"left"}>
           <Flex flexDirection={{ base: "column", md: "row" }} py={4}>
             <Box py="4">
-              <Text fontSize={"lg"} color={"teal.400"}>
+              <Text fontSize={"lg"} color={"blue.400"}>
                 <ArrowBackIcon mr={2} />
                 <NextLink href={`/campaign/${campaignId}`}>
                   Back to Campaign
@@ -442,10 +442,10 @@ export default function Requests() {
                     fontSize={"md"}
                     fontWeight={600}
                     color={"white"}
-                    bg={"teal.400"}
+                    bg={"blue.400"}
                     href={"#"}
                     _hover={{
-                      bg: "teal.300",
+                      bg: "blue.300",
                     }}
                   >
                     Add Withdrawal Request
@@ -545,9 +545,9 @@ export default function Requests() {
                       fontSize={"md"}
                       fontWeight={600}
                       color={"white"}
-                      bg={"teal.400"}
+                      bg={"blue.400"}
                       _hover={{
-                        bg: "teal.300",
+                        bg: "blue.300",
                     }}
                     >
                     <NextLink href={`/campaign/${campaignId}/requests/new`}>

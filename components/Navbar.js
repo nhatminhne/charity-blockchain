@@ -53,13 +53,13 @@ export default function NavBar() {
             <Heading
               textAlign="left"
               fontFamily={"heading"}
-              color={useColorModeValue("teal.800", "white")}
+              color={useColorModeValue("blue.800", "white")}
               as="h2"
               size="lg"
             >
               <Box
                 as={"span"}
-                color={useColorModeValue("teal.400", "teal.300")}
+                color={useColorModeValue("blue.400", "blue.300")}
                 position={"relative"}
                 zIndex={10}
                 _after={{
@@ -69,11 +69,11 @@ export default function NavBar() {
                   bottom: 0,
                   w: "full",
                   h: "30%",
-                  bg: useColorModeValue("teal.100", "teal.900"),
+                  bg: useColorModeValue("blue.100", "blue.900"),
                   zIndex: -1,
                 }}
               >
-                <NextLink href="/">🤝BetterFund</NextLink>
+                <NextLink href="/">DonateIT </NextLink>
               </Box>
             </Heading>
           </Flex>
@@ -92,14 +92,7 @@ export default function NavBar() {
             >
               <NextLink href="/campaign/new">Create Campaign</NextLink>
             </Button>
-            <Button
-              fontSize={"md"}
-              fontWeight={600}
-              variant={"link"}
-              display={{ base: "none", md: "inline-flex" }}
-            >
-              <NextLink href="/#howitworks"> How it Works</NextLink>
-            </Button>
+            
 
             {wallet.status === "connected" ? (
               <Menu>
@@ -120,10 +113,10 @@ export default function NavBar() {
                   fontSize={"md"}
                   fontWeight={600}
                   color={"white"}
-                  bg={"teal.400"}
+                  bg={"blue.400"}
                   href={"#"}
                   _hover={{
-                    bg: "teal.300",
+                    bg: "blue.300",
                   }}
                   onClick={() => 
                     wallet.connect()

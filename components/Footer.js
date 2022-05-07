@@ -56,13 +56,13 @@ export default function Footer() {
         <Heading
           textAlign={useBreakpointValue({ base: "center", md: "left" })}
           fontFamily={"heading"}
-          color={useColorModeValue("teal.800", "white")}
+          color={useColorModeValue("blue.800", "white")}
           as="h2"
           size="lg"
         >
           <Box
             as={"span"}
-            color={useColorModeValue("teal.400", "teal.300")}
+            color={useColorModeValue("blue.400", "blue.300")}
             position={"relative"}
             zIndex={10}
             _after={{
@@ -72,66 +72,56 @@ export default function Footer() {
               bottom: 0,
               w: "full",
               h: "30%",
-              bg: useColorModeValue("teal.100", "teal.900"),
+              bg: useColorModeValue("blue.100", "blue.900"),
               zIndex: -1,
             }}
           >
-            <NextLink href="/">🤝BetterFund</NextLink>
+            <NextLink href="/">DonateIT</NextLink>
           </Box>
         </Heading>
-        <Stack direction={"row"} spacing={6}>
+        {/* <Stack direction={"row"} spacing={6}>
           <NextLink href="/">Home</NextLink>
           <Link
             href={
-              "https://github.com/harsh242/betterfund-crowdfunding-in-blockchain"
+              "https://github.com/nhatminhne/charity-blockchain"
             }
             isExternal
           >
             Github
           </Link>
-          <Link href={"mailto:harshbadhai242@gmail.com"} isExternal>
+          <Link href={"mailto:19520972@gm.uit.edu.com"} isExternal>
             Contact
           </Link>
-        </Stack>
+        </Stack> */}
       </Container>
 
       <Box
-        borderTopWidth={1}
+        borderTopWidth={0}
         borderStyle={"solid"}
         borderColor={useColorModeValue("gray.200", "gray.700")}
       >
         <Container
-          as={Stack}
-          maxW={"6xl"}
-          py={4}
-          direction={{ base: "column", md: "row" }}
-          spacing={4}
-          justify={{ base: "center", md: "space-between" }}
-          align={{ base: "center", md: "center" }}
-        >
-          <Text>🌐 Made while 💩 by Harsh, Hritvik , Nischal & Aaditya</Text>
-          <Stack direction={"row"} spacing={6}>
-            <SocialButton label={"Website"} href={"https://harshbadhai.me/"}>
-              {" "}
-              <FaGlobe />
-            </SocialButton>
-            <SocialButton
-              label={"Twitter"}
-              href={"https://twitter.com/harshbadhai28"}
-            >
-              <FaTwitter />
-            </SocialButton>
-            <SocialButton label={"Github"} href={"https://github.com/harsh242"}>
-              <FaGithub />
-            </SocialButton>
-            <SocialButton
-              label={"Instagram"}
-              href={"https://www.instagram.com/frames_by._harsh/"}
-            >
-              <FaInstagram />
-            </SocialButton>
-          </Stack>
-        </Container>
+        padding="60px"
+        as={Stack}
+        maxW={"2xl"}
+        py={4}
+        direction={{ base: "column", md: "row" }}
+        spacing={4}
+        justify={{ base: "center", md: "space-between" }}
+        align={{ base: "center", md: "center" }}
+      >
+        
+
+        <Text style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center"
+        }}>Made by Nguyen Nhat Minh , Nguyen Ngoc Thien & Nguyen Chi Thong <br />🌐University of Information and Technology, Ho Chi Minh</Text>
+        
+        <Stack direction={"row"} spacing={6}>
+        </Stack>
+      </Container>
       </Box>
     </Box>
   );

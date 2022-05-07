@@ -222,7 +222,7 @@ export default function CampaignSingle({
                   {campaign.description}
                 </Text>
                 <Link
-                  color="teal.500"
+                  color="blue.500"
                   //href={`https://rinkeby.etherscan.io/address/${id}`}
                   href="/"
                   isExternal
@@ -278,7 +278,7 @@ export default function CampaignSingle({
                         px="4"
                       >
                         <InfoIcon
-                          color={useColorModeValue("teal.800", "white")}
+                          color={useColorModeValue("blue.800", "white")}
                         />
                       </Tooltip>
                     </StatLabel>
@@ -332,7 +332,7 @@ export default function CampaignSingle({
                         {getWEIPriceInUSD(ETHPrice, campaign.target)})
                       </Text>
                       <Progress
-                        colorScheme="teal"
+                        colorScheme="blue"
                         size="sm"
                         value={Web3.utils.fromWei(campaign.total.toString(), "ether")}
                         max={Web3.utils.fromWei(campaign.target.toString(), "ether")}
@@ -351,7 +351,7 @@ export default function CampaignSingle({
                   <Heading
                     lineHeight={1.1}
                     fontSize={{ base: "2xl", sm: "3xl" }}
-                    color={useColorModeValue("teal.600", "teal.200")}
+                    color={useColorModeValue("blue.600", "blue.200")}
                   >
                     Contribute Now!
                   </Heading>
@@ -401,10 +401,10 @@ export default function CampaignSingle({
                             fontFamily={"heading"}
                             mt={4}
                             w={"full"}
-                            bgGradient="linear(to-r, teal.400,green.400)"
+                            bgGradient="linear(to-r, blue.400,green.400)"
                             color={"white"}
                             _hover={{
-                              bgGradient: "linear(to-r, teal.400,blue.400)",
+                              bgGradient: "linear(to-r, blue.400,teal.400)",
                               boxShadow: "xl",
                             }}
                             isLoading={formState.isSubmitting}
@@ -438,10 +438,10 @@ export default function CampaignSingle({
                     <Button
                       fontFamily={"heading"}
                       w={"full"}
-                      bgGradient="linear(to-r, teal.400,green.400)"
+                      bgGradient="linear(to-r, blue.400,green.400)"
                       color={"white"}
                       _hover={{
-                        bgGradient: "linear(to-r, teal.400,blue.400)",
+                        bgGradient: "linear(to-r, blue.400,teal.400)",
                         boxShadow: "xl",
                       }}
                     >
