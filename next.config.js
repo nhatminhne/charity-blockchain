@@ -3,7 +3,7 @@ module.exports = {
     webpack5: false,
   },
 
-  /*async headers() {
+  async headers() {
     return [
       {
         source: '/campaign/new', // becomes /docs/with-basePath
@@ -31,5 +31,5 @@ module.exports = {
         ],
       }
     ]
-  },*/
+  },
 };
