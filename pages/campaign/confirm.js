@@ -140,7 +140,7 @@ const RequestRow = ({
                 fontSize={"1em"}
               >
                 <CheckCircleIcon
-                  color={useColorModeValue("green.600", "green.300")}
+                  color={useColorModeValue("blue.600", "blue.300")}
                 />
               </Tooltip>
             ) : (
@@ -169,7 +169,7 @@ const RequestRow = ({
               fontSize={"1em"}
             >
               <CheckCircleIcon
-                color={useColorModeValue("green.600", "green.300")}
+                color={useColorModeValue("blue.600", "blue.300")}
               />
             </Tooltip>
           ) : (
@@ -246,12 +246,10 @@ export default function Requests() {
         <Container px={{ base: "4", md: "12" }} maxW={"7xl"} align={"left"}>
           <Flex flexDirection={{ base: "column", md: "row" }} py={4}>
             <Box py="4">
-              <Text fontSize={"lg"} color={"teal.400"}>
-                <ArrowBackIcon mr={2} />
-                <NextLink href={`/campaign/${campaignId}`}>
-                  Back to Campaign
-                </NextLink>
-              </Text>
+            <Text fontSize={"lg"} color={"blue.400"}>
+              <ArrowBackIcon mr={2} />
+              <NextLink href="/"> Back to Home</NextLink>
+            </Text>
             </Box>
             <Spacer />
           </Flex>
