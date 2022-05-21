@@ -89,6 +89,7 @@ const RequestRow = ({
     checking()
   }, [wallet])
 
+  //check if the viewer is the contributor for this campaign
   const checking = async () => {
     setIsContributor(false)
     const contributionCount = await charityContract.methods.contributionCount().call()
@@ -100,6 +101,7 @@ const RequestRow = ({
       }
     }
 
+    //check if the withdrawal is approved
     if(wallet.status == "connected") {
       const withdrawalApprover = await charityContract.methods.withdrawalApprovers(wallet.account.toString()).call()
       if(withdrawalApprover == campaignId) {
@@ -131,8 +133,6 @@ const RequestRow = ({
       setLoadingApprove(false);
     }
   };
-
-  
 
   const onFinalize = async () => {
     setLoadingFinalize(true);
@@ -168,7 +168,6 @@ const RequestRow = ({
       <Td>
         <Link
           color="blue.500"
-          //href={`https://rinkeby.etherscan.io/address/${request.recipient}`}
           href="/"
           isExternal
         >
@@ -351,14 +350,6 @@ export default function Requests() {
     const tmpWithdrawals = await filterWithdrawal(campaignId)
     setRequestsList(tmpWithdrawals || [])
   }
-  /*{
-  campaignId,
-  requestCount,
-  approversCount,
-  balance,
-  name,
-  ETHPrice,
-} */
 
   return (
     <div>
